@@ -6,6 +6,8 @@
 
 #include "seism_t.h"
 
+#include "pthread.h"
+
 int main()
 {
     printf("|    TEST STARTS\n");

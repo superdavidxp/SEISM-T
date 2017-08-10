@@ -4,6 +4,13 @@ project(SEISM_T)
 set (CMAKE_C_STANDARD 99)
 
 enable_language (Fortran)
+find_package (Threads REQUIRED)
+if (Threads_FOUND)
+    message("")
+    message("|    PTHREAD FOUND")
+    message("|    PTHREAD = " ${CMAKE_THREAD_LIBS_INIT})
+endif (Threads_FOUND)
+
 
 find_package (MPI REQUIRED)
 if (MPI_FOUND)
@@ -37,15 +44,16 @@ message ("CMAKE_LIBRARY_PATH   = " ${CMAKE_LIBRARY_PATH})
 message (${CMAKE_INCLUDE_PATH})
 
 add_library (seism_t SHARED src/vel_out.c src/seism_t.h)
+target_link_libraries(seism_t ${CMAKE_THREAD_LIBS_INIT})
 
 INSTALL (TARGETS seism_t DESTINATION ${CMAKE_LIBRARY_PATH})
 INSTALL (DIRECTORY src/ DESTINATION ${CMAKE_INCLUDE_PATH}
          FILES_MATCHING PATTERN "*.h")
 
 include_directories(${CMAKE_SOURCE_DIR})
-add_executable(example_01 examples/examples.c)
-target_link_libraries(example_01 seism_t)
+add_executable(examples_01 examples/examples.c)
+target_link_libraries(examples_01 seism_t ${CMAKE_THREAD_LIBS_INIT})
 
-enable_testing()
-add_test(EXAMPLE_01 example_01)
+#enable_testing()
+#add_test(EXAMPLE_01 examples)
 
