@@ -5,7 +5,7 @@ set (CMAKE_C_STANDARD 99)
 
 enable_language (Fortran)
 
-find_package(MPI REQUIRED)
+find_package (MPI REQUIRED)
 if (MPI_FOUND)
     message("")
     message("|    MPI FOUND")
@@ -22,3 +22,9 @@ if (MPI_FOUND)
     message("|    MPI_INCLUDE_PATH         = " ${MPI_INCLUDE_PATH})
     message("|    MPI_LIBRARY              = " ${MPI_LIBRARY})
 endif (MPI_FOUND)
+
+add_library(vel_out SHARED src/vel_out.c src/vel_out.h)
+
+
+
+add_executable(examples examples/examples.c)
