@@ -23,8 +23,25 @@ if (MPI_FOUND)
     message("|    MPI_LIBRARY              = " ${MPI_LIBRARY})
 endif (MPI_FOUND)
 
-add_library(vel_out SHARED src/vel_out.c src/vel_out.h)
+set(CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/seism_t)
+set(CMAKE_LIBRARY_PATH   ${CMAKE_INSTALL_PREFIX}/lib)
+set(CMAKE_INCLUDE_PATH   ${CMAKE_INSTALL_PREFIX}/include)
 
+set(MY_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/vel_out.h)
 
+message(${CMAKE_INSTALL_PREFIX})
+message(${CMAKE_LIBRARY_PATH})
+message(${CMAKE_INCLUDE_PATH})
+message(${MY_INCLUDE_FILE})
 
-add_executable(examples examples/examples.c)
+add_library(seism_t SHARED src/vel_out.c src/seism_t.h)
+
+#INSTALL(TARGETS vel_out DESTINATION "lib")
+
+#INSTALL(FILES SEISM_T DESTINATION "include")
+
+#find_library(vel_out)
+
+#include_directories ("${PROJECT_SOURCE_DIR}/include")
+#
+#add_executable(examples examples/examples.c)
