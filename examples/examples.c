@@ -4,7 +4,7 @@
 
 #include "stdio.h"
 
-#include "../include/vel_out.h"
+#include "seism_t.h"
 
 int main()
 {
