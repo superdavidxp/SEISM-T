@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.5.1)
 project(SEISM_T)
 
 set (CMAKE_C_STANDARD 99)
@@ -50,9 +50,9 @@ INSTALL (TARGETS seism_t DESTINATION ${CMAKE_LIBRARY_PATH})
 INSTALL (DIRECTORY src/ DESTINATION ${CMAKE_INCLUDE_PATH}
          FILES_MATCHING PATTERN "*.h")
 
-include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR} ${MPI_C_INCLUDE_PATH})
 add_executable(examples_01 examples/examples.c)
-target_link_libraries(examples_01 seism_t ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(examples_01 seism_t ${CMAKE_THREAD_LIBS_INIT} ${MPI_C_LIBRARIES})
 
 #enable_testing()
 #add_test(EXAMPLE_01 examples)
