@@ -43,7 +43,7 @@ message ("CMAKE_INSTALL_PREFIX = " ${CMAKE_INSTALL_PREFIX})
 message ("CMAKE_LIBRARY_PATH   = " ${CMAKE_LIBRARY_PATH})
 message (${CMAKE_INCLUDE_PATH})
 
-add_library (seism_t SHARED src/vel_out.c src/seism_t.h)
+add_library (seism_t SHARED src/vel_out.c src/seism_t.h src/common.c)
 target_link_libraries(seism_t ${CMAKE_THREAD_LIBS_INIT})
 
 INSTALL (TARGETS seism_t DESTINATION ${CMAKE_LIBRARY_PATH})
