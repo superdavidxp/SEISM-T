@@ -55,7 +55,9 @@ before_install:
 install:
 
 script:
-
+  - cd SEISM-T
+  - cmake .
+  - make install
 
 
 after_success:
