@@ -54,6 +54,7 @@ before_install:
   - cd ..
 
 install:
+  - sudo apt-get install -qq gfortran
   - sudo apt-get install -qq openmpi-bin libopenmpi-dev
 
 script:
