@@ -51,8 +51,11 @@ matrix:
 
 before_install:
   - eval "${MATRIX_EVAL}"
+  - cd ..
+  - sudo apt-get update -qq
 
 install:
+  - sudo apt-get install -qq openmpi-bin libopenmpi-dev
 
 script:
   - cd SEISM-T
