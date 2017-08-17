@@ -1,0 +1,30 @@
+language: c
+
+sudo: required
+
+notifications:
+  email:
+    on_success: always
+    on_failure: always
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          package: ['gcc-4.9']
+     env:
+     - CC_COMPILER=gcc-4.9
+     
+before_install:
+
+install:
+
+script:
+
+  
+
+after_success:
+  
