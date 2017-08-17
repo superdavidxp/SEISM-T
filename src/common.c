@@ -6,7 +6,7 @@
 
 void seism_t_mpi_init(int argc, char** argv, int* provided)
 {
-    int err;
+    int err = -1;
     err=MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, provided);
     if (err != 0)
     {
