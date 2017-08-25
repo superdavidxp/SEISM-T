@@ -9,8 +9,6 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <pthread.h>
-#include <cuda.h>
-#include <cuda_runtime.h>
 #include <mpi.h>
 #include <unistd.h>
 #include <math.h>

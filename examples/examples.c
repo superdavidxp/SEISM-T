@@ -46,8 +46,6 @@ int main(int argc, char** argv)
     MPI_Datatype filetype;
     MPI_File fh;
 
-    cudaStream_t stream_IO;
-
     seism_t_mpi_init(argc, argv, &provided);
     err = MPI_Comm_size(MPI_COMM_WORLD, &nrank);
     err = MPI_Comm_rank(MPI_COMM_WORLD, &irank);
@@ -260,12 +258,6 @@ int main(int argc, char** argv)
     float *d_u1, *d_v1, *d_w1;
     if (irank==0) printf("Allocate device velocity and stress pointers and copy.\n");
     long int num_bytes = sizeof(float)*(nxt+4+8*loop)*(nyt+4+8*loop)*(nzt+2*align);
-    cudaMalloc((void**)&d_u1, num_bytes);
-    cudaMemcpy(d_u1,&u1[0][0][0],num_bytes,cudaMemcpyHostToDevice);
-    cudaMalloc((void**)&d_v1, num_bytes);
-    cudaMemcpy(d_v1,&v1[0][0][0],num_bytes,cudaMemcpyHostToDevice);
-    cudaMalloc((void**)&d_w1, num_bytes);
-    cudaMemcpy(d_w1,&w1[0][0][0],num_bytes,cudaMemcpyHostToDevice);
 
     num_bytes = rec_nxt*rec_nyt*rec_nzt;
     Bufx  = Alloc1D(num_bytes*WRITE_STEP);
