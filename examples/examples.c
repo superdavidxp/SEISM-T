@@ -22,17 +22,23 @@ void calcRegularReceiverPoints(int *rec_nbgx, int *rec_nedx, int *rec_nbgy, int 
 void calculate_IO_BLOCK_SIZE(int *IO_BLOCK_SIZE_X, int *IO_BLOCK_SIZE_Y, int *IO_BLOCK_SIZE_Z,
                              int rec_nxt, int rec_nyt, int rec_nzt);
 
+Grid3D Alloc3D(int nx, int ny, int nz);
+
 Grid1D Alloc1D(int nx);
 
 int main(int argc, char** argv)
 {
     int i        = -1;
+    int j        = -1;
+    int k        = -1;
     int tmpSize  = -1;
     int err      = 0;
     int irank    = -1;
     int nrank    = -1;
     int provided = -1;
     int cur_step = -1;
+    int idtmp    = -1;
+    int tmpInd   = -1;
     float *tmpbuf;
 
     MPI_Comm MCW, MC1;
@@ -60,7 +66,7 @@ int main(int argc, char** argv)
     pthread_mutex_init(&vel_out_mutex,NULL);
     pthread_cond_init(&vel_out_cond,NULL);
 
-    float TMAX       = 1.0;
+    float TMAX       = 0.4;
     float DH         = 40.0;
     float DT         = 0.02;
     float ARBC       = 0.95;
@@ -75,7 +81,7 @@ int main(int argc, char** argv)
     int   IFAULT     = 1;
     int   READ_STEP  = 10;
     int   NTISKP     = 1;
-    int   WRITE_STEP = 10;
+    int   WRITE_STEP = 5;
     int   NX         = 128;
     int   NY         = 128;
     int   NZ         = 128;
@@ -125,7 +131,6 @@ int main(int argc, char** argv)
 
     int xls, xre, xvs, xve, xss1, xse1, xss2, xse2, xss3, xse3;
     int yfs, yfe, ybs, ybe, yls, yre;
-    int loop = 1;
 
     if(x_rank_L<0)
         xls = 2+4*loop;
@@ -247,7 +252,22 @@ int main(int argc, char** argv)
 
     Grid1D Bufx=NULL, Bufy=NULL, Bufz=NULL;
 
-    long int num_bytes = rec_nxt*rec_nyt*rec_nzt;
+    Grid3D u1=NULL, v1=NULL, w1=NULL;
+    u1  = Alloc3D(nxt+4+8*loop, nyt+4+8*loop, nzt+2*align);
+    v1  = Alloc3D(nxt+4+8*loop, nyt+4+8*loop, nzt+2*align);
+    w1  = Alloc3D(nxt+4+8*loop, nyt+4+8*loop, nzt+2*align);
+
+    float *d_u1, *d_v1, *d_w1;
+    if (irank==0) printf("Allocate device velocity and stress pointers and copy.\n");
+    long int num_bytes = sizeof(float)*(nxt+4+8*loop)*(nyt+4+8*loop)*(nzt+2*align);
+    cudaMalloc((void**)&d_u1, num_bytes);
+    cudaMemcpy(d_u1,&u1[0][0][0],num_bytes,cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&d_v1, num_bytes);
+    cudaMemcpy(d_v1,&v1[0][0][0],num_bytes,cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&d_w1, num_bytes);
+    cudaMemcpy(d_w1,&w1[0][0][0],num_bytes,cudaMemcpyHostToDevice);
+
+    num_bytes = rec_nxt*rec_nyt*rec_nzt;
     Bufx  = Alloc1D(num_bytes*WRITE_STEP);
     Bufy  = Alloc1D(num_bytes*WRITE_STEP);
     Bufz  = Alloc1D(num_bytes*WRITE_STEP);
@@ -266,70 +286,60 @@ int main(int argc, char** argv)
     //MPI_Comm_split(MPI_COMM_WORLD, velout_MPIcolor, *rank, &velout_MCwriters);
     MPI_Comm_dup(MPI_COMM_WORLD, &velout_MCwriters);
     
-    vel_out_param_init(&velout_args, &irank, Bufx, Bufy, Bufz, tmpbuf,
-                       &rec_nxt, &rec_nyt, &rec_nzt,
-                       &nt, &NTISKP, &WRITE_STEP,
-                       &cur_step_ntiskp,
-                       &ntiskp_mutex, &veldata_rwlock, &ntiskp_cond,
-                       &stream_IO, &fh,
-                       &displacement, &filetype,
-                       filename, filenamebasex, filenamebasey, filenamebasez);
+    vel_out_init(&velout_args, &irank, Bufx, Bufy, Bufz,
+                 &rec_nxt, &rec_nyt, &rec_nzt,
+                 &nt, &NTISKP, &WRITE_STEP,
+                 &cur_step, &fh,
+                 &displacement, &filetype,
+                 filename, filenamebasex,
+                 filenamebasey, filenamebasez);
 
-    err = pthread_create(&vel_out_thread, &thread_attr, (void*)&vel_out_pthread_func, (void*)velout_args);
-    if (err) {
-        printf("Rank=%d: Cannot create velout thread! Error code=%d\n", irank, err);
-    }
+    int ioutput = 0;
 
     //  Main Loop Starts
     if (NPC==0 && NVE==1)
     {
         for (cur_step=1;cur_step<=nt;cur_step++)
         {
-            if(irank == 0) printf("Time Step =                   %4d    OF  Total Timesteps = %d\n", cur_step, nt);
+            if (irank == 0) printf("|    Time Step =                   %7d  OF  Total Timesteps = %d\n", cur_step, nt);
 
-            pthread_mutex_lock(&mpi_mutex);
+            // calculation
+            sleep(0.05);
 
-//            PostRecvMsg_Y(RF_vel, RB_vel, MCW, request_y, &count_y, msg_v_size_y, y_rank_F, y_rank_B);
-//            PostRecvMsg_X(RL_vel, RR_vel, MCW, request_x, &count_x, msg_v_size_x, x_rank_L, x_rank_R);
-
-            pthread_mutex_lock(&vel_out_mutex);
-
-//            dvelcy_H(d_u1, d_v1, d_w1, d_xx,   d_yy,   d_zz,   d_xy,       d_xz, d_yz, d_dcrjx, d_dcrjy, d_dcrjz,
-//                     d_d1, nxt,  nzt,  d_f_u1, d_f_v1, d_f_w1, stream_i,   yfs,  yfe, y_rank_F);
-//            dvelcy_H(d_u1, d_v1, d_w1, d_xx,   d_yy,   d_zz,   d_xy,       d_xz, d_yz, d_dcrjx, d_dcrjy, d_dcrjz,
-//                     d_d1, nxt,  nzt,  d_b_u1, d_b_v1, d_b_w1, stream_i,   ybs,  ybe, y_rank_B);
-
-            pthread_mutex_unlock(&mpi_mutex);
-
-//            dvelcx_H(d_u1, d_v1, d_w1, d_xx, d_yy, d_zz, d_xy, d_xz, d_yz, d_dcrjx, d_dcrjy, d_dcrjz,
-//                     d_d1, nyt,  nzt,  stream_i,   xvs,  xve);
-
-            pthread_mutex_unlock(&vel_out_mutex);
-            pthread_mutex_lock(&mpi_mutex);
-
-//            PostSendMsg_X(SL_vel, SR_vel, MCW, request_x, &count_x, msg_v_size_x, x_rank_L, x_rank_R, rank, Both);
-//            MPI_Waitall(count_x, request_x, status_x);
-
-            pthread_mutex_unlock(&mpi_mutex);
-
-            if (fmod(cur_step, NTISKP) == 0)
+            // this whole loop go in to pthread library
+            if ( fmod(cur_step, NTISKP) == 0 )
             {
-                pthread_rwlock_wrlock(&veldata_rwlock);
+                num_bytes = sizeof(float)*(nxt+4+8*loop)*(nyt+4+8*loop)*(nzt+2*align);
+                idtmp = ((cur_step/NTISKP+WRITE_STEP-1)%WRITE_STEP);
+                idtmp = idtmp*rec_nxt*rec_nyt*rec_nzt;
+                tmpInd = idtmp;
 
-//                num_bytes = sizeof(float)*rec_nxt*rec_nyt*rec_nzt;
-//                Cpy2HostRegulars_IO(d_IObufx, d_IObufy, d_IObufz, tmpbuf, num_bytes, stream_IO);
+                for(k=nzt+align-1 - rec_nbgz; k>=nzt+align-1 - rec_nedz; k=k-NSKPZ)
+                {
+                    for(j=2+4*loop + rec_nbgy; j<=2+4*loop + rec_nedy; j=j+NSKPY)
+                    {
+                        for(i=2+4*loop + rec_nbgx; i<=2+4*loop + rec_nedx; i=i+NSKPX)
+                        {
+                            Bufx[tmpInd] = u1[i][j][k];
+                            Bufy[tmpInd] = v1[i][j][k];
+                            Bufz[tmpInd] = w1[i][j][k];
+                            tmpInd++;
+                        }
+                    }
+                }
 
-                pthread_rwlock_unlock(&veldata_rwlock);
-                pthread_mutex_lock(&ntiskp_mutex);
+            } // if ( fmod(cur_step, NTISKP) == 0 )
 
-                cur_step_ntiskp = cur_step;
+            vel_out_pthread((void*) velout_args);
 
-                pthread_cond_broadcast(&ntiskp_cond);
-                pthread_mutex_unlock(&ntiskp_mutex);
-            }
-        } // for (cur_step=1;cur_step<=nt;cur_step++)
-    } // if (NPC==0 && NVE==1)
-    
+        } // for ( cur_step=1;cur_step<=nt;cur_step++ )
+
+    } // if ( NPC==0 && NVE==1 )
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    vel_out_finalize();
+
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();
     return 0;
@@ -418,6 +428,32 @@ void calculate_IO_BLOCK_SIZE(int *IO_BLOCK_SIZE_X, int *IO_BLOCK_SIZE_Y, int *IO
             }
         }
     }
+}
+
+Grid3D Alloc3D(int nx, int ny, int nz)
+{
+    int i, j, k;
+    Grid3D U = (Grid3D)malloc(sizeof(float**)*nx + sizeof(float *)*nx*ny +sizeof(float)*nx*ny*nz);
+
+    if (!U){
+        printf("Cannot allocate 3D float array\n");
+        exit(-1);
+    }
+    for(i=0;i<nx;i++){
+        U[i] = ((float**) U) + nx + i*ny;
+    }
+
+    float *Ustart = (float *) (U[nx-1] + ny);
+    for(i=0;i<nx;i++)
+        for(j=0;j<ny;j++)
+            U[i][j] = Ustart + i*ny*nz + j*nz;
+
+    for(i=0;i<nx;i++)
+        for(j=0;j<ny;j++)
+            for(k=0;k<nz;k++)
+                U[i][j][k] = 0.0f;
+
+    return U;
 }
 
 Grid1D Alloc1D(int nx)

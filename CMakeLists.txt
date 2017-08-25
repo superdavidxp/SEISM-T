@@ -30,15 +30,15 @@ if (MPI_FOUND)
     message("|    MPI_LIBRARY              = " ${MPI_LIBRARY})
 endif (MPI_FOUND)
 
-find_package(CUDA REQUIRED)
-if(CUDA_FOUND)
-    message("")
-    message("|    CUDA FOUND")
-    message("|    " ${CUDA_VERSION_STRING})
-    message("|    " ${CUDA_TOOLKIT_ROOT_DIR})
-    message("|    " ${CUDA_INCLUDE_DIRS})
-    message("|    " ${CUDA_LIBRARIES})
-endif(CUDA_FOUND)
+#find_package(CUDA REQUIRED)
+#if(CUDA_FOUND)
+#    message("")
+#    message("|    CUDA FOUND")
+#    message("|    " ${CUDA_VERSION_STRING})
+#    message("|    " ${CUDA_TOOLKIT_ROOT_DIR})
+#    message("|    " ${CUDA_INCLUDE_DIRS})
+#    message("|    " ${CUDA_LIBRARIES})
+#endif(CUDA_FOUND)
 
 set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 
@@ -53,17 +53,17 @@ message ("CMAKE_INSTALL_PREFIX = " ${CMAKE_INSTALL_PREFIX})
 message ("CMAKE_LIBRARY_PATH   = " ${CMAKE_LIBRARY_PATH})
 message (${CMAKE_INCLUDE_PATH})
 
-include_directories(${CMAKE_SOURCE_DIR} ${MPI_C_INCLUDE_PATH} ${CUDA_INCLUDE_DIRS})
+include_directories(${CMAKE_SOURCE_DIR} ${MPI_C_INCLUDE_PATH})
 
 add_library (seism_t SHARED src/vel_out.c src/seism_t.h src/common.c)
-target_link_libraries(seism_t ${CMAKE_THREAD_LIBS_INIT} ${MPI_C_LIBRARIES} ${CUDA_LIBRARIES})
+target_link_libraries(seism_t ${CMAKE_THREAD_LIBS_INIT} ${MPI_C_LIBRARIES})
 
 INSTALL (TARGETS seism_t DESTINATION ${CMAKE_LIBRARY_PATH})
 INSTALL (DIRECTORY src/ DESTINATION ${CMAKE_INCLUDE_PATH}
          FILES_MATCHING PATTERN "*.h")
 
 add_executable(examples_01 examples/examples.c)
-target_link_libraries(examples_01 seism_t ${CMAKE_THREAD_LIBS_INIT} ${MPI_C_LIBRARIES} ${CUDA_LIBRARIES} -lm)
+target_link_libraries(examples_01 seism_t ${CMAKE_THREAD_LIBS_INIT} ${MPI_C_LIBRARIES} -lm)
 
 #enable_testing()
 #add_test(EXAMPLE_01 examples)
