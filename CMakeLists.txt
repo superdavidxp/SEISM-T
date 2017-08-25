@@ -40,6 +40,10 @@ endif (MPI_FOUND)
 #    message("|    " ${CUDA_LIBRARIES})
 #endif(CUDA_FOUND)
 
+SET(CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
+SET(CMAKE_C_FLAGS "-g -O0 -Wall -W -fprofile-arcs -ftest-coverage")
+SET(CMAKE_EXE_LINKER_FLAGS "-fprofile-arcs -ftest-coverage")
+
 set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 
 set (CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/seism_t)
