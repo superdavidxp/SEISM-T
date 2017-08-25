@@ -35,3 +35,5 @@ script:
   - mpiexec -n 2 ./examples_01
 
 after_success:
+  - ${GCOV} -v
+  - coveralls --gcov ${GCOV} --gcov-options '\-lp'
