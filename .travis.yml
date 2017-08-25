@@ -32,6 +32,6 @@ script:
   - cd SEISM-T
   - cmake .
   - make install
-  - mpiexec -n 2 ./example_01
+  - mpiexec -n 2 ./examples_01
 
 after_success:
