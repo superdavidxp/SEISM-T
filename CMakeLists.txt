@@ -66,7 +66,7 @@ INSTALL (TARGETS seism_t DESTINATION ${CMAKE_LIBRARY_PATH})
 INSTALL (DIRECTORY src/ DESTINATION ${CMAKE_INCLUDE_PATH}
          FILES_MATCHING PATTERN "*.h")
 
-add_executable(examples_01 examples/examples.c)
+add_executable(examples_01 examples/examples_01.c)
 target_link_libraries(examples_01 seism_t ${CMAKE_THREAD_LIBS_INIT} ${MPI_C_LIBRARIES} -lm)
 
 #enable_testing()
