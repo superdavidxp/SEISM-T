@@ -17,8 +17,6 @@
 #define loop  1
 
 pthread_t vel_thread;
-pthread_t sgt_thread;
-pthread_t viz_thread;
 
 pthread_attr_t   thread_attr;
 pthread_mutex_t  ntiskp_mutex;
@@ -65,6 +63,37 @@ void vel_out_exec(void *ptr);
 
 void vel_out_pthread(struct velout_input* ptr);
 
-void vel_out_finalize();
+//
+// SGT FUNCTION
+//
+
+pthread_t sgt_thread;
+int       sgt_numsta;
+int       sgt_numsta_local;
+float    *sgt_buf;
+int      *sgt_sta;
+char     *sgt_filenamebase;
+char     *sgt_stationList;
+int      *sgt_sta_indices;
+float    *sgt_c1, *sgt_c2, *sgt_mu;
+int       sgt_igreen;
+
+struct sgt_input
+{
+    int *rank;
+    int *nt;
+    int *NTISKP;
+    int *WRITE_STEP;
+    int *cur_step_ptr;
+    pthread_mutex_t *ntiskp_mutex;
+    pthread_rwlock_t *veldata_rwlock;
+    pthread_cond_t *ntiskp_cond;
+    float **tmpbuf;
+    MPI_File *fh;
+    MPI_Offset displacement;
+    MPI_Datatype filetype;
+};
+
+
 
 #endif //SEISM_T_VEL_OUT_H
