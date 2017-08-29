@@ -32,7 +32,7 @@ int main(int argc, char** argv)
     int j        = -1;
     int k        = -1;
     int tmpSize  = -1;
-    int err      = 0;
+    int err      =  0;
     int irank    = -1;
     int nrank    = -1;
     int provided = -1;
@@ -328,11 +328,7 @@ int main(int argc, char** argv)
 
     } // if ( NPC==0 && NVE==1 )
 
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    vel_out_finalize();
-
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MC1);
     MPI_Finalize();
     return 0;
 }

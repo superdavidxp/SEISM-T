@@ -46,8 +46,6 @@ void vel_out_pthread(struct velout_input* ptr)
     int err    = -1;
     int *irank = ptr->irank;
 
-    pthread_join(vel_thread, NULL);
-
     err = pthread_create(&vel_thread, &thread_attr, (void*) &vel_out_exec, (void*) ptr);
     if (err)
     {
@@ -87,6 +85,8 @@ void vel_out_exec(void *ptr)
     int cur_step_local;
     cur_step_local = *cur_step;
 
+    pthread_mutex_lock( &vel_out_mutex );
+
     if ( fmod(((*cur_step)/(*NTISKP)), *WRITE_STEP )==0 )
     {
         if (*irank == 0) printf("|    RANK %d: In vel_out_exec! cur_step=%d\n",*irank, cur_step_local);
@@ -116,13 +116,14 @@ void vel_out_exec(void *ptr)
         err = MPI_File_close(fh);
 
         // add one file sync to make sure the file is written to the disk before program complete
-        MPI_File_sync(*fh);
 
         if (*irank == 0) printf("|    Outputs are written successfully! sur_step = %d\n", *cur_step);
 
     } // if ( fmod((cur_step/NTISKP), WRITE_STEP )==0 )
 
-//    pthread_exit(0);
+    pthread_mutex_unlock( &vel_out_mutex );
+
+    pthread_exit(0);
 
     return;
 }
