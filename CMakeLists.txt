@@ -59,7 +59,7 @@ message (${CMAKE_INCLUDE_PATH})
 
 include_directories(${CMAKE_SOURCE_DIR} ${MPI_C_INCLUDE_PATH})
 
-add_library (seism_t SHARED src/vel_out.c src/seism_t.h src/common.c)
+add_library (seism_t SHARED src/vel_out.c src/sgt_out.c src/seism_t.h src/common.c)
 target_link_libraries(seism_t ${CMAKE_THREAD_LIBS_INIT} ${MPI_C_LIBRARIES})
 
 INSTALL (TARGETS seism_t DESTINATION ${CMAKE_LIBRARY_PATH})

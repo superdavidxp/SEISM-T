@@ -56,6 +56,24 @@ void sgt_out_init(struct sgt_input **sgt_args, int *sgt_opt, char *sgt_file,
 void sgt_out_exec(void *ptr)
 {
     struct sgtout_input *sgtout_args;
+    sgt_args = (struct sgt_input*)ptr;
+
+    int *irank              = sgt_args->irank;
+    int *nt                 = sgt_args->nt;
+    int *NTISKP             = sgt_args->NTISKP;
+    int *WRITE_STEP         = sgt_args->WRITE_STEP;
+    int *cur_step_ptr       = sgt_args->cur_step_ptr;
+    float **tmpbuf          = sgt_args->tmpbuf;
+    MPI_File *fh            = sgt_args->fh;
+    MPI_Datatype filetype   = sgt_args->filetype;
+    MPI_Offset displacement = sgt_args->displacement;
+
+    int cur_step_local = *cur_step_ptr;
+    int i, pos, ind, err;
+    char filename[100];
+    MPI_Status filestatus;
+    char mpi_err_str[100];
+    int mpi_err_str_l;
 
     pthread_rwlock_rdlock(veldata_rwlock);
 

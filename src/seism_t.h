@@ -80,14 +80,14 @@ int       sgt_igreen;
 
 struct sgtout_input
 {
-    int *rank;
-    int *nt;
-    int *NTISKP;
-    int *WRITE_STEP;
-    int *cur_step_ptr;
-    float **tmpbuf;
-    MPI_File *fh;
-    MPI_Offset displacement;
+    int         *irank;
+    int         *nt;
+    int         *NTISKP;
+    int         *WRITE_STEP;
+    int         *cur_step_ptr;
+    float      **tmpbuf;
+    MPI_File    *fh;
+    MPI_Offset   displacement;
     MPI_Datatype filetype;
 };
 
