@@ -56,17 +56,17 @@ void sgt_out_init(struct sgt_input **sgt_args, int *sgt_opt, char *sgt_file,
 void sgt_out_exec(void *ptr)
 {
     struct sgtout_input *sgtout_args;
-    sgt_args = (struct sgt_input*)ptr;
+    sgtout_args = (struct sgtout_input*)ptr;
 
-    int *irank              = sgt_args->irank;
-    int *nt                 = sgt_args->nt;
-    int *NTISKP             = sgt_args->NTISKP;
-    int *WRITE_STEP         = sgt_args->WRITE_STEP;
-    int *cur_step_ptr       = sgt_args->cur_step_ptr;
-    float **tmpbuf          = sgt_args->tmpbuf;
-    MPI_File *fh            = sgt_args->fh;
-    MPI_Datatype filetype   = sgt_args->filetype;
-    MPI_Offset displacement = sgt_args->displacement;
+    int *irank              = sgtout_args->irank;
+    int *nt                 = sgtout_args->nt;
+    int *NTISKP             = sgtout_args->NTISKP;
+    int *WRITE_STEP         = sgtout_args->WRITE_STEP;
+    int *cur_step_ptr       = sgtout_args->cur_step_ptr;
+    float **tmpbuf          = sgtout_args->tmpbuf;
+    MPI_File *fh            = sgtout_args->fh;
+    MPI_Datatype filetype   = sgtout_args->filetype;
+    MPI_Offset displacement = sgtout_args->displacement;
 
     int cur_step_local = *cur_step_ptr;
     int i, pos, ind, err;
@@ -75,13 +75,11 @@ void sgt_out_exec(void *ptr)
     char mpi_err_str[100];
     int mpi_err_str_l;
 
-    pthread_rwlock_rdlock(veldata_rwlock);
-
     for (i=0; i<sgt_numsta_local; i++)
     {
         pos = i*6;
 
-        if (!i) printf("%d) sgt station ind=%d\n", *rank,i);
+        if (!i) printf("RANK: %d, sgt station ind = %d\n", *irank,i);
         if (!i) printf("\ttmpbuf(%d,%d,%d)=\n", sgt_sta[i*3], sgt_sta[i*3+1], sgt_sta[i*3+2]);
         if (!i) printf("\t%e,%e,%e,%e,%e,%e;\n", (*tmpbuf)[pos], (*tmpbuf)[pos+1], (*tmpbuf)[pos+2], (*tmpbuf)[pos+3], (*tmpbuf)[pos+4], (*tmpbuf)[pos+5]);
 
@@ -104,37 +102,35 @@ void sgt_out_exec(void *ptr)
         ind += (*WRITE_STEP);
     }
 
-    pthread_rwlock_unlock(veldata_rwlock);
-
     if ((cur_step_local/(*NTISKP))%(*WRITE_STEP) == 0)
     {
         pthread_mutex_lock(&mpi_mutex);
 
-        if (*rank==0) printf("Writing sgt outputs...\n");
+        if (*irank==0) printf("Writing sgt outputs...\n");
         sprintf(filename, "%s%07d", sgt_filenamebase, cur_step_local);
-        err = MPI_File_open(sgt_MCW,filename,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,fh);
+        err = MPI_File_open(sgtout_MCwriters,filename,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,fh);
         if (err!=MPI_SUCCESS)
         {
             MPI_Error_string(err, mpi_err_str, &mpi_err_str_l);
-            printf("%d) MPI_ERROR! %s\n",*rank,mpi_err_str);
+            printf("%d) MPI_ERROR! %s\n",*irank,mpi_err_str);
         }
         err = MPI_File_set_view(*fh, displacement, MPI_FLOAT, filetype, "native", MPI_INFO_NULL);
         if (err!=MPI_SUCCESS)
         {
             MPI_Error_string(err, mpi_err_str, &mpi_err_str_l);
-            printf("%d) MPI_ERROR! %s\n",*rank,mpi_err_str);
+            printf("%d) MPI_ERROR! %s\n",*irank,mpi_err_str);
         }
         err = MPI_File_write_all(*fh, sgt_buf, sgt_numsta_local*6*(*WRITE_STEP), MPI_FLOAT, &filestatus);
         if (err!=MPI_SUCCESS)
         {
             MPI_Error_string(err, mpi_err_str, &mpi_err_str_l);
-            printf("%d) MPI_ERROR! %s\n",*rank,mpi_err_str);
+            printf("%d) MPI_ERROR! %s\n",*irank,mpi_err_str);
         }
         err = MPI_File_close(fh);
         if (err!=MPI_SUCCESS)
         {
             MPI_Error_string(err, mpi_err_str, &mpi_err_str_l);
-            printf("%d) MPI_ERROR! %s\n",*rank,mpi_err_str);
+            printf("%d) MPI_ERROR! %s\n",*irank,mpi_err_str);
         }
         pthread_mutex_unlock(&mpi_mutex);
     }

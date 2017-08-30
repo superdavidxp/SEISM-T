@@ -34,6 +34,7 @@ typedef float *restrict Grid1D;
 typedef int   *restrict PosInf;
 
 MPI_Comm  velout_MCwriters;
+MPI_Comm  sgtout_MCwriters;
 
 struct velout_input
 {
