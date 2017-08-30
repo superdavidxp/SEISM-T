@@ -39,19 +39,10 @@ void vel_out_init(struct velout_input **velout_args, int *irank,
     (*velout_args)->filenamebasex = filenamebasex;
     (*velout_args)->filenamebasey = filenamebasey;
     (*velout_args)->filenamebasez = filenamebasez;
-}
 
-void vel_out_pthread(struct velout_input* ptr)
-{
-    int err    = -1;
-    int *irank = ptr->irank;
-
-    err = pthread_create(&vel_thread, &thread_attr, (void*) &vel_out_exec, (void*) ptr);
-    if (err)
-    {
-        printf("ERROR: RANK = %d: Cannot create velout thread! Error Code = %d\n", *irank, err);
-        exit(1);
-    }
+    pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_JOINABLE);
+    pthread_mutex_init(&vel_out_mutex,NULL);
+    pthread_cond_init(&vel_out_cond,NULL);
 }
 
 void vel_out_exec(void *ptr)
@@ -85,13 +76,14 @@ void vel_out_exec(void *ptr)
     int cur_step_local;
     cur_step_local = *cur_step;
 
+//    printf("|    RANK %d: NEW THREAD CREATED tid = %d\n",*irank, (int)pthread_self());
+
     pthread_mutex_lock( &vel_out_mutex );
 
     if ( fmod(((*cur_step)/(*NTISKP)), *WRITE_STEP )==0 )
     {
         if (*irank == 0) printf("|    RANK %d: In vel_out_exec! cur_step=%d\n",*irank, cur_step_local);
 
-        //
         // Build a pthd buffer
 
         sprintf(filename, "%s%07d", filenamebasex, cur_step_local);
@@ -117,15 +109,38 @@ void vel_out_exec(void *ptr)
 
         // add one file sync to make sure the file is written to the disk before program complete
 
-        if (*irank == 0) printf("|    Outputs are written successfully! sur_step = %d\n", *cur_step);
+        if (*irank == 0) printf("|    Outputs are written successfully! sur_step = %d\n", cur_step_local);
 
     } // if ( fmod((cur_step/NTISKP), WRITE_STEP )==0 )
 
     pthread_mutex_unlock( &vel_out_mutex );
 
-    pthread_exit(0);
+//    pthread_exit(0);
 
-    return;
+//    printf("|    RANK %d: NEW THREAD COMPLETED tid = %d\n",*irank, (int)pthread_self());
+}
+
+void vel_out_pthread(struct velout_input* ptr)
+{
+    int err    = -1;
+    int retval = -1;
+    int *irank = ptr->irank;
+
+//    printf("|    irank = %d, before pthread_join\n", *irank);
+    err = pthread_join(vel_thread, &retval);
+    if (err)
+    {
+        printf("ERROR: RANK = %d: Cannot join velout thread! Error Code = %d\n", *irank, err);
+    }
+//    printf("|    irank = %d, after  pthread_join, err = %d\n", *irank, err);
+
+    err = pthread_create(&vel_thread, &thread_attr, (void*) &vel_out_exec, (void*) ptr);
+    if (err)
+    {
+        printf("ERROR: RANK = %d: Cannot create velout thread! Error Code = %d\n", *irank, err);
+        exit(1);
+    }
+
 }
 
 void vel_out_finalize()

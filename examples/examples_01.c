@@ -55,14 +55,14 @@ int main(int argc, char** argv)
 
     printf("RANK : %d, of %d : provided = %d\n", irank, nrank, provided);
 
-    pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
+    pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_JOINABLE);
     pthread_mutex_init(&mpi_mutex,NULL);
     pthread_cond_init(&mpi_cond,NULL);
     pthread_mutex_init(&ntiskp_mutex,NULL);
-    pthread_rwlock_init(&veldata_rwlock,NULL);
     pthread_cond_init(&ntiskp_cond,NULL);
     pthread_mutex_init(&vel_out_mutex,NULL);
     pthread_cond_init(&vel_out_cond,NULL);
+    pthread_rwlock_init(&veldata_rwlock,NULL);
 
     float TMAX       = 0.4;
     float DH         = 40.0;
@@ -325,6 +325,8 @@ int main(int argc, char** argv)
             vel_out_pthread((void*) velout_args);
 
         } // for ( cur_step=1;cur_step<=nt;cur_step++ )
+
+
 
     } // if ( NPC==0 && NVE==1 )
 
